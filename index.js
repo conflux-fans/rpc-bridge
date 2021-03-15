@@ -85,4 +85,4 @@ function convertEthAddressToCfx(address) {
   return `0x1${address.toLowerCase().slice(3)}`;
 }
 
-app.listen(3030);
+app.listen(CONFIG.port);
