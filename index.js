@@ -1,26 +1,14 @@
-const fs = require('fs');
-const path = require('path');
 const Koa = require('koa');
 const bodyParser = require('koa-bodyparser');
+const fs = require('fs');
+const path = require('path');
 const util = require('util');
-const {HttpProvider, ethToConflux} = require('web3-providers-http-proxy');
-
-const URL = 'https://testnet-rpc.conflux-chain.org.cn/v2';
-const provider = new HttpProvider(URL, {
-  chainAdaptor: ethToConflux,
-  networkId: 1,
-});
-const promsieWrapSend = util.promisify(provider.send).bind(provider);
-
-async function send(method, ...params) {
-  let payload = buildJsonRpcRequest(method, ...params);
-  return await promsieWrapSend(payload);
-}
+const { HttpProvider, ethToConflux } = require('web3-providers-http-proxy');
+const CONFIG = require('./config.json');
 
 const app = new Koa();
 app.use(bodyParser());
 
-// response
 app.use(async ctx => {
   const { body } = ctx.request;
   if (!body) {
@@ -47,11 +35,22 @@ app.use(async ctx => {
   ctx.body = response;
 });
 
+const provider = new HttpProvider(CONFIG.url, {
+  chainAdaptor: ethToConflux,
+  networkId: CONFIG.networkId,
+});
+
+const promsieWrapSend = util.promisify(provider.send).bind(provider);
+
+async function send(method, ...params) {
+  let payload = buildJsonRpcRequest(method, ...params);
+  return await promsieWrapSend(payload);
+}
+
 async function saveJsonRpc(method, params, result) {
   const fileName = path.join(__dirname, `./json-rpc-shots/${method}.json`);
   try {
     await util.promisify(fs.stat)(fileName);
-    return;
   } catch(e) {
     let data = {method, params, result};
     await util.promisify(fs.writeFile)(fileName, JSON.stringify(data, null, '\t'));

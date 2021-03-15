@@ -6,7 +6,8 @@ const util = require('util');
 const { providerFactory } = require('js-conflux-sdk');
 
 const provider = providerFactory({
-  url: "http://127.0.0.1:7545"
+  url: "http://127.0.0.1:7545",
+  // url: "https://rinkeby.infura.io/v3/undefined",
 });
 
 const app = new Koa();
