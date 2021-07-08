@@ -13,7 +13,7 @@ let engine = new JsonRpcEngine();
 engine.push(cfxAddressIfy());
 engine.push(adaptGetCodeResponse());
 engine.push(jsonrpcLogger());
-engine.push(CFXProvider({url: 'http://localhost:12537', networkId: 2}));
+engine.push(CFXProvider({url: CONFIG.url, networkId: CONFIG.networkId}));
 // engine.push(ETHProvider({url: 'http://localhost:7585'}))
 
 const app = new Koa();
