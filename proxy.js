@@ -4,6 +4,7 @@ const Koa = require('koa');
 const bodyParser = require('koa-bodyparser');
 const util = require('util');
 const { providerFactory } = require('js-conflux-sdk');
+const debug = require('debug')('rpc-bridge');
 
 const provider = providerFactory({
   url: "http://127.0.0.1:7545",
@@ -35,6 +36,7 @@ app.use(async ctx => {
       };
     }
     ctx.body = response;
+    debug('RPC inspect', method, params, response);
   } else {
     ctx.body = { "jsonrpc": "2.0", "result": 19, "id": 1 };
   }

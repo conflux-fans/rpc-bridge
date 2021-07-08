@@ -1,88 +1,32 @@
 const Koa = require('koa');
 const bodyParser = require('koa-bodyparser');
-const fs = require('fs');
-const path = require('path');
-const util = require('util');
-const debug = require('debug')('rpc-bridge');
-const { HttpProvider, ethToConflux } = require('web3-providers-http-proxy');
+// const debug = require('debug')('rpc-bridge');
 const CONFIG = require('./config.json');
+const { JsonRpcEngine } = require('json-rpc-engine');
+const CFXProvider = require('./middlewares/cfxProvider');
+const ETHProvider = require('./middlewares/ethProvider');
+const cfxAddressIfy = require('./middlewares/cfxAddressIfy');
+const adaptGetCodeResponse = require('./middlewares/adaptGetCodeResponse');
+const jsonrpcLogger = require('./middlewares/logger');
 
-const EthBalanceChecker = '0xb1f8e55c7f64d203c1400b9d8555d050f94adf39';
-const CfxBalanceChecker = '0x8f35930629fce5b5cf4cd762e71006045bfeb24d';
+let engine = new JsonRpcEngine();
+engine.push(cfxAddressIfy());
+engine.push(adaptGetCodeResponse());
+engine.push(jsonrpcLogger());
+engine.push(CFXProvider({url: 'http://localhost:12537', networkId: 2}));
+// engine.push(ETHProvider({url: 'http://localhost:7585'}))
 
 const app = new Koa();
 app.use(bodyParser());
 
 app.use(async ctx => {
   const { body } = ctx.request;
-  if (!body) {
-    ctx.body = { 
-      "jsonrpc": "2.0", 
-      "error": {message: 'invalid jsonrpc request', code: -1}, 
-      "id": 1 
-    };
-    return;
-  }
-
-  const { method, params, id } = body;
-  
-  if(method === 'eth_getBalance') {
-    params[0] = convertEthAddressToCfx(params[0]);
-  }
-  // TODO make sure ethereum mainnet and testnet's balanceChecker address is same
-  if(method === 'eth_call' && params[0].to === EthBalanceChecker) {
-    params[0].to = CfxBalanceChecker;
-  }
-  
-  let response;
-  try {
-    let result = await send(method, ...params);
-    response = result;
-    // await saveJsonRpc(method, params, result);
-  } catch (e) {
-    response = {
-      "jsonrpc": "2.0",
-      id,
-      "error": { "code": e.code, "message": e.message },
-    };
-  }
-  debug('RPC inspect', method, params, response);
-  ctx.body = response;
+  ctx.assert(body, 401, 'Invalid JSON RPC request');
+  ctx.body = await engine.handle(body);
 });
 
-const provider = new HttpProvider(CONFIG.url, {
-  chainAdaptor: ethToConflux,
-  networkId: CONFIG.networkId,
+app.on('error', err => {
+  console.error('server error', err);
 });
-
-const promsieWrapSend = util.promisify(provider.send).bind(provider);
-
-async function send(method, ...params) {
-  let payload = buildJsonRpcRequest(method, ...params);
-  return await promsieWrapSend(payload);
-}
-
-async function saveJsonRpc(method, params, result) {
-  const fileName = path.join(__dirname, `./json-rpc-shots/${method}.json`);
-  try {
-    await util.promisify(fs.stat)(fileName);
-  } catch(e) {
-    let data = {method, params, result};
-    await util.promisify(fs.writeFile)(fileName, JSON.stringify(data, null, '\t'));
-  }
-}
-
-function buildJsonRpcRequest(method, ...params) {
-  return {
-    "jsonrpc": "2.0",
-    "id": Date.now().toString(),
-    method,
-    params,
-  }
-}
-
-function convertEthAddressToCfx(address) {
-  return `0x1${address.toLowerCase().slice(3)}`;
-}
 
 app.listen(CONFIG.port);
