@@ -8,11 +8,13 @@ const ETHProvider = require('./middlewares/ethProvider');
 const cfxAddressIfy = require('./middlewares/cfxAddressIfy');
 const adaptGetCodeResponse = require('./middlewares/adaptGetCodeResponse');
 const jsonrpcLogger = require('./middlewares/logger');
+const mapTxHash = require('./middlewares/mapTxHash');
 
 let engine = new JsonRpcEngine();
+engine.push(jsonrpcLogger());
 engine.push(cfxAddressIfy());
 engine.push(adaptGetCodeResponse());
-engine.push(jsonrpcLogger());
+engine.push(mapTxHash());
 engine.push(CFXProvider({url: CONFIG.url, networkId: CONFIG.networkId}));
 // engine.push(ETHProvider({url: 'http://localhost:7585'}))
 
