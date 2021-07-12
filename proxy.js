@@ -36,9 +36,9 @@ app.use(async ctx => {
       };
     }
     ctx.body = response;
-    debug('RPC inspect', method, params, response);
+    debug({method, params, result: response.result, error: response.error});
   } else {
-    ctx.body = { "jsonrpc": "2.0", "result": 19, "id": 1 };
+    ctx.body = { "jsonrpc": "2.0", "error": {"message": "Invalid request"}, "id": 1 };
   }
 });
 

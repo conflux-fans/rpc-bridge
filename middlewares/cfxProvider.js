@@ -6,12 +6,17 @@ module.exports = function(options) {
   const cfxProvider = new JsonRpcProxy(url, networkId);
 
   return createAsyncMiddleware(async (req, res, next) => {
-    let _response = await cfxProvider.send(req);
+    const { method } = req;
+    const _response = await cfxProvider.send(req);
     if (_response.error) {
-      res.error = _response.error;
+      // adapt 'eth_getCode' error situation
+      if (method !== 'eth_getCode') {
+        res.error = _response.error;
+      } else {
+        res.result = '0x';
+      }
     } else {
       res.result = _response.result;
     }
-    // await next();
   })
 };

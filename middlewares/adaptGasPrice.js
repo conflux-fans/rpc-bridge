@@ -1,11 +1,10 @@
 const { createAsyncMiddleware } = require('json-rpc-engine');
-const utils = require('../utils');
-
 module.exports = function() {
   return createAsyncMiddleware(async (req, res, next) => {
     const { method } = req;
-    if(method === 'eth_getBalance' || method === 'eth_getTransactionCount') {
-      req.params[0] = utils.ethAddressToCfx(req.params[0]);
+    if (method === 'eth_gasPrice') {
+      res.result = '0x3b9aca00';
+      return;
     }
     await next();
   })
