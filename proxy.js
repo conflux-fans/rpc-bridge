@@ -17,29 +17,28 @@ app.use(bodyParser());
 // response
 app.use(async ctx => {
   const { body } = ctx.request;
-  if (body) {
-    const { method, params, id } = body;
-    let response;
-    try {
-      let result = await provider.call(method, ...params);
-      response = {
-        "jsonrpc": "2.0",
-        id,
-        result
-      };
-      await saveJsonRpc(method, params, result);
-    } catch (e) {
-      response = {
-        "jsonrpc": "2.0",
-        id,
-        "error": { "code": e.code, "message": e.message },
-      };
-    }
-    ctx.body = response;
-    debug({method, params, result: response.result, error: response.error});
-  } else {
-    ctx.body = { "jsonrpc": "2.0", "error": {"message": "Invalid request"}, "id": 1 };
+  if (!body) {
+    ctx.body = { 
+      "jsonrpc": "2.0", 
+      "error": {"message": "Invalid request"}, 
+      "id": 1 
+    };
+    return;
   }
+  const { method, params, id } = body;
+  let response = {
+    "jsonrpc": "2.0",
+    id
+  };
+  try {
+    let result = await provider.call(method, ...params);
+    response.result = result;
+    await saveJsonRpc(method, params, result);
+  } catch (e) {
+    response.error = { "code": e.code, "message": e.message };
+  }
+  debug({method, params, result: response.result, error: response.error});
+  ctx.body = response;
 });
 
 async function saveJsonRpc(method, params, result) {
