@@ -10,3 +10,10 @@ This is a Conflux-to-ETH RPC bridge
 ### What has been adapt
 1. gasPrice: 0x3b9aca00 (1G drip)
 2. eth_getTransactionCount, eth_getBalance will adapt address
+
+
+
+### What to check
+1. from, to address should be an valid address
+2. If to is an contract address, check whether the contract exist
+3. Check contract input data
