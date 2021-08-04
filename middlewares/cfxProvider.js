@@ -1,11 +1,8 @@
 const JsonRpcProxy = require('web3-providers-http-proxy');
 const { createAsyncMiddleware } = require('json-rpc-engine');
-const { Conflux } = require('js-conflux-sdk');
 
-module.exports = async function(options) {
-  const { url } = options;
-  const cfx = new Conflux(options);
-  const { networkId } = await cfx.getStatus();
+module.exports = function(options) {
+  const { url, networkId } = options;
   const cfxProvider = new JsonRpcProxy(url, networkId);
 
   return createAsyncMiddleware(async (req, res, next) => {
