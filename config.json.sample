@@ -1,4 +1,4 @@
 {
-  "url": "https://testnet-rpc.conflux-chain.org.cn/v2",
-  "port": 3030
+  "url": "http://localhost:12537",
+  "port": 8545
 }
