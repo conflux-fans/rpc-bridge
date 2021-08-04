@@ -1,6 +1,5 @@
 const Koa = require('koa');
 const bodyParser = require('koa-bodyparser');
-// const debug = require('debug')('rpc-bridge');
 const CONFIG = require('./config.json');
 const { JsonRpcEngine } = require('json-rpc-engine');
 const CFXProvider = require('./middlewares/cfxProvider');

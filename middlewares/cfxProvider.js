@@ -1,17 +1,18 @@
 const JsonRpcProxy = require('web3-providers-http-proxy');
 const { createAsyncMiddleware } = require('json-rpc-engine');
+const { Conflux } = require('js-conflux-sdk');
 
-module.exports = function(options) {
-  const { url, networkId } = options;
+module.exports = async function(options) {
+  const { url } = options;
+  const cfx = new Conflux(options);
+  const { networkId } = await cfx.getStatus();
   const cfxProvider = new JsonRpcProxy(url, networkId);
 
   return createAsyncMiddleware(async (req, res, next) => {
     const { method } = req;
     const _response = await cfxProvider.send(req);
     if (_response.error) {
-      if (method === 'eth_getCode') {
-        res.result = '0x' // adapt 'eth_getCode' error situation
-      } else if (method === 'eth_sendRawTransaction') {
+      if (method === 'eth_sendRawTransaction') {
         let {message, data} = _response.error;
         if (data) {
           message += `(${data})`;
