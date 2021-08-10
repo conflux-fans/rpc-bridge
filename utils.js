@@ -1,3 +1,5 @@
+const { Conflux } = require('js-conflux-sdk');
+
 function ethAddressToCfx(address) {
   if(hasCFXAddressNamespace(address)) return address;
   return `0x1${address.toLowerCase().slice(3)}`;
@@ -14,11 +16,37 @@ function hasCFXAddressNamespace(address) {
 }
 
 async function waitNS(number = 30) {
-  await new Promise((resolve, reject) => {setTimeout(resolve, number * 1000)});
+  await new Promise((resolve, _) => {setTimeout(resolve, number * 1000)});
+}
+
+function buildJsonRpcRes(data) {
+  return Object.assign({
+    jsonrpc: '2.0',
+  }, data);
+}
+
+async function getNetworkId(url) {
+  const cfx = new Conflux({url});
+  let networkId
+  let n = 10;
+  while(!networkId && n > 0) {
+    try {
+      const status = await cfx.getStatus();
+      networkId = status.networkId;
+    } catch(err) {
+      console.log('******** Retry to get networkId');
+      await waitNS(5);
+    }
+    n--;
+  }
+
+  return networkId;
 }
 
 module.exports = {
   ethAddressToCfx,
   ethContractAddressToCfx,
   waitNS,
+  getNetworkId,
+  buildJsonRpcRes
 };
