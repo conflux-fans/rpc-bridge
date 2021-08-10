@@ -39,7 +39,7 @@ Conflux Scan 支持两种格式地址的搜索，并且提供了[转换工具](h
 
 #### 交易 hash
 
-`eth_sendRaw Transaction` 方法的适配是通过 [CIP-72](https://github.com/Conflux-Chain/CIPs/blob/master/CIPs/cip-72.md) 实现的，适配器需要将以太坊原始交易 decode 出来，然后添加 Conflux 交易所需的 storageLimit 和 epochHeight 信息，并将交易签名的 v 值从以太坊特殊处理还原回来，最终编码为 Conflux 的 rawTransaction。由此带来的问题是交易的 hash 会发生变化。
+`eth_sendRawTransaction` 方法的适配是通过 [CIP-72](https://github.com/Conflux-Chain/CIPs/blob/master/CIPs/cip-72.md) 实现的，适配器需要将以太坊原始交易 decode 出来，然后添加 Conflux 交易所需的 storageLimit 和 epochHeight 信息，并将交易签名的 v 值从以太坊特殊处理还原回来，最终编码为 Conflux 的 rawTransaction。由此带来的问题是交易的 hash 会发生变化。
 
 ## 如何使用
 
