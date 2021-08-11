@@ -10,6 +10,8 @@ const SUB_METHOD = 'eth_subscribe';
 const UNSUB_METHOD = 'eth_unsubscribe';
 const LOG_EVENT = 'logs';
 const ETH_SUBSCRIPTION = 'eth_subscription';
+const CFX_SUB_METHOD = 'cfx_subscribe';
+const CFX_UNSUB_METHOD = 'cfx_unsubscribe';
 
 // create a websocket connection to server and subscribe the 'newHeads` event
 function subscribeNewHead(newHeadEmitter) {
@@ -65,6 +67,8 @@ async function startWsServer() {
     console.log('wsServer closed');
   });
 
+  const logChannels = {};
+
   function onNewConnection(ws) {
     ws.on('message', onIncomingMsg);
   
@@ -78,7 +82,7 @@ async function startWsServer() {
     async function onIncomingMsg(message) {
       try {
         const body = JSON.parse(message);
-        const { id, method, params } = body;
+        const { id, method, params, jsonrpc } = body;
         // Normal RPC methods
         if (method !== SUB_METHOD && method !== UNSUB_METHOD) {
           const response = await engine.handle(body);
@@ -88,33 +92,81 @@ async function startWsServer() {
 
         // Unsubscribe method
         if (method === UNSUB_METHOD) {
-          newHeadEmitter.unsub(params[0]);
+          const _subId = params[0];
+          const _channel = logChannels[_subId];
+          if (_channel) {
+            _channel.send(JSON.stringify({
+              id, 
+              jsonrpc,
+              method: CFX_UNSUB_METHOD,
+              params
+            }));
+            _channel.close();
+            delete logChannels[_subId];
+          } else {
+            newHeadEmitter.unsub(_subId);
+          }
+          return;
         }
         
         // handle 'eth_subscribe' method
-        if (method === SUB_METHOD) {
-          if (params[0] === NewHeadEmitter.EVENT_NAME) {  // 'newHeads' event
-            const subId = newHeadEmitter.sub(msg => {
-              try {
-                msg = JSON.parse(msg);
-                msg.method = ETH_SUBSCRIPTION;
-                msg.params.result = format.formatBlock(msg.params.result);
-                msg.params.subscription = subId;
-                ws.send(JSON.stringify(msg));
-              } catch(e) {
-                console.log('Head event parse error');
-              }
-            });
-            ws.newHeadsID = subId;
-            const response = buildJsonRpcRes({
+        const _topic = params[0];
+        if (_topic === NewHeadEmitter.EVENT_NAME) {  // 'newHeads' event
+          const subId = newHeadEmitter.sub(msg => {
+            try {
+              msg = JSON.parse(msg);
+              msg.method = ETH_SUBSCRIPTION;
+              msg.params.result = format.formatBlock(msg.params.result);
+              msg.params.subscription = subId;
+              ws.send(JSON.stringify(msg));
+            } catch(e) {
+              console.log('Head event parse error');
+            }
+          });
+          ws.newHeadsID = subId;
+          const response = buildJsonRpcRes({
+            id,
+            result: subId,
+          })
+          sendResponse(response);
+          return;
+        } else if(_topic === LOG_EVENT) {
+          const logWs = new WebSocket(CONFIG.wsUrl);
+          
+          logWs.on('open', function open() {
+            if(params[1]) {
+              params[1] = _formatFilter(params[1]);
+            }
+            logWs.send(JSON.stringify({
               id,
-              result: subId,
-            })
-            sendResponse(response);
-            return;
-          } else if(params[0] === LOG_EVENT) {
-            // TODO 订阅 log 事件，并记录 event id
-          }
+              jsonrpc,
+              method: CFX_SUB_METHOD,
+              params,
+            }));
+          });
+
+          logWs.on('message', function incoming(logMsg) {
+            const _response = JSON.parse(logMsg);
+            // the subscription id
+            if(!_response.method) {
+              logChannels[_response.result] = logWs;
+              ws.send(logMsg);
+              return;
+            }
+            //
+            if (_response.params.result.revertTo) {
+              // TODO: handle the revert situation
+              return
+            }
+            //
+            _response.method = ETH_SUBSCRIPTION;
+            _response.params.result = format.formatLog(_response.params.result);  // adapt log
+            ws.send(JSON.stringify(_response));
+          });
+
+          logWs.on('close', () => {
+            // 
+          });
         }
 
       } catch (e) {
@@ -132,6 +184,21 @@ async function startWsServer() {
     function sendResponse (data) {
       ws.send(JSON.stringify(data));
     }
+  }
+
+  function _formatFilter(filter) {
+    let {address, topics} = filter;
+    if (address) {
+      if (_.isArray(address)) {
+        address = address.map(a => format.formatAddress(a, networkId));
+      } else {
+        address = format.formatAddress(address, networkId);
+      }
+    }
+    return {
+      address,
+      topics
+    };
   }
 
 }

@@ -26,14 +26,6 @@ To run this service, you need a node that running `conflux-rust`'s newest code.
 
 ## TODOs
 
-### Websocket & PubSub
-
-[MDN The websocket API](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)
-
-1. websocket
-2. ws
-3. socket.io
-
 ### MetaMask ERC20 balanceChecker address adapt
 
 * Ethereum: 0xb1f8e55c7f64d203c1400b9d8555d050f94adf39
