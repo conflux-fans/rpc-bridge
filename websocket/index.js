@@ -5,13 +5,15 @@ const getMiddlewareEngine = require('../getMiddlewareEngine');
 const CONFIG = require('../config.json');
 const { buildJsonRpcRes } = require('../utils');
 const format = require('web3-providers-http-proxy/src/utils/format');
-
-const SUB_METHOD = 'eth_subscribe';
-const UNSUB_METHOD = 'eth_unsubscribe';
-const LOG_EVENT = 'logs';
-const ETH_SUBSCRIPTION = 'eth_subscription';
-const CFX_SUB_METHOD = 'cfx_subscribe';
-const CFX_UNSUB_METHOD = 'cfx_unsubscribe';
+const {
+  SUB_METHOD,
+  UNSUB_METHOD,
+  CFX_SUB_METHOD,
+  CFX_UNSUB_METHOD,
+  LOG_EVENT,
+  ETH_SUBSCRIPTION,
+  NEW_HEADS_EVENT,
+} = require('./consts');
 
 // create a websocket connection to server and subscribe the 'newHeads` event
 function subscribeNewHead(newHeadEmitter) {
@@ -22,8 +24,8 @@ function subscribeNewHead(newHeadEmitter) {
   ws.on('open', function open() {
     const jsonReq = { 
       "jsonrpc": "2.0", 
-      "method": "cfx_subscribe", 
-      "params": ["newHeads"], 
+      "method": CFX_SUB_METHOD, 
+      "params": [NEW_HEADS_EVENT], 
       "id": subReqId,
     };
     ws.send(JSON.stringify(jsonReq));
@@ -41,7 +43,7 @@ function subscribeNewHead(newHeadEmitter) {
   });
 
   ws.on('close', () => {
-    // TODO: cancel newHead subscription
+    // TODO: cancel all newHead subscription
   });
 }
 
@@ -94,7 +96,7 @@ async function startWsServer() {
         if (method === UNSUB_METHOD) {
           const _subId = params[0];
           const _channel = logChannels[_subId];
-          if (_channel) {
+          if (_channel) {  // unsub logs
             _channel.send(JSON.stringify({
               id, 
               jsonrpc,
@@ -103,7 +105,7 @@ async function startWsServer() {
             }));
             _channel.close();
             delete logChannels[_subId];
-          } else {
+          } else {  // unsub newHeads 
             newHeadEmitter.unsub(_subId);
           }
           return;
@@ -111,7 +113,7 @@ async function startWsServer() {
         
         // handle 'eth_subscribe' method
         const _topic = params[0];
-        if (_topic === NewHeadEmitter.EVENT_NAME) {  // 'newHeads' event
+        if (_topic === NEW_HEADS_EVENT) {  // 'newHeads' event
           const subId = newHeadEmitter.sub(msg => {
             try {
               msg = JSON.parse(msg);
@@ -189,7 +191,7 @@ async function startWsServer() {
   function _formatFilter(filter) {
     let {address, topics} = filter;
     if (address) {
-      if (_.isArray(address)) {
+      if (Array.isArray(address)) {
         address = address.map(a => format.formatAddress(a, networkId));
       } else {
         address = format.formatAddress(address, networkId);
