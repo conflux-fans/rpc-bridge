@@ -160,7 +160,7 @@ async function startWsServer() {
             }
             //
             _response.method = ETH_SUBSCRIPTION;
-            _response.params.result = format.formatLog(_response.params.result);  // adapt log
+            format.formatLog(_response.params.result);  // adapt log
             ws.send(JSON.stringify(_response));
           });
 
