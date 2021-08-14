@@ -12,11 +12,11 @@ module.exports = function(options) {
       if (method === 'eth_sendRawTransaction') {
         let {message, data} = _response.error;
         if (data) {
-          message += `(${data})`;
+          message += ` (${data})`;
         }
         res.error = {
           code: -32000,   // send tx error code
-          message: error.message
+          message
         };
       } else {
         res.error = _response.error;

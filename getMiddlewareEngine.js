@@ -20,6 +20,8 @@ async function getMiddlewareEngine(url) {
   // engine.push(mapTxHash());
   engine.push(CFXProvider({url, networkId}));
   // engine.push(ETHProvider({url: 'http://localhost:7585'}))
+  
+  engine.networkId = networkId; // save to use in other place
   return engine;
 }
 

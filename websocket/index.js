@@ -23,23 +23,23 @@ function subscribeNewHead(newHeadEmitter) {
   
   ws.on('open', function open() {
     const jsonReq = { 
-      "jsonrpc": "2.0", 
-      "method": CFX_SUB_METHOD, 
-      "params": [NEW_HEADS_EVENT], 
-      "id": subReqId,
+      id: subReqId,
+      jsonrpc: "2.0", 
+      method: CFX_SUB_METHOD,
+      params: [NEW_HEADS_EVENT], 
     };
     ws.send(JSON.stringify(jsonReq));
   });
 
   ws.on('message', function incoming(message) {
-    if (!logSubId) {
-      const _tmp = JSON.parse(message);
-      if (_tmp.id === subReqId) {
+    const _tmp = JSON.parse(message);
+    if (!logSubId && _tmp.id === subReqId) {
         logSubId = _tmp.result;
-      }
       return
     }
-    newHeadEmitter.pub(message);
+    _tmp.method = ETH_SUBSCRIPTION;
+    _tmp.params.result = format.formatBlock(_tmp.params.result);
+    newHeadEmitter.pub(_tmp);
   });
 
   ws.on('close', () => {
@@ -51,7 +51,7 @@ async function startWsServer() {
   const newHeadEmitter = new NewHeadEmitter();
   subscribeNewHead(newHeadEmitter);
   
-  const engine = await getMiddlewareEngine(CONFIG.url);
+  const engine = await getMiddlewareEngine(CONFIG.wsUrl);
   const wsServer = new WebSocketServer({ port: CONFIG.wsPort });
 
   wsServer.on('connection', onNewConnection);
@@ -115,22 +115,14 @@ async function startWsServer() {
         const _topic = params[0];
         if (_topic === NEW_HEADS_EVENT) {  // 'newHeads' event
           const subId = newHeadEmitter.sub(msg => {
-            try {
-              msg = JSON.parse(msg);
-              msg.method = ETH_SUBSCRIPTION;
-              msg.params.result = format.formatBlock(msg.params.result);
-              msg.params.subscription = subId;
-              ws.send(JSON.stringify(msg));
-            } catch(e) {
-              console.log('Head event parse error');
-            }
+            msg.params.subscription = subId;
+            sendResponse(msg);
           });
           ws.newHeadsID = subId;
-          const response = buildJsonRpcRes({
+          sendResponse(buildJsonRpcRes({
             id,
             result: subId,
-          })
-          sendResponse(response);
+          }));
           return;
         } else if(_topic === LOG_EVENT) {
           const logWs = new WebSocket(CONFIG.wsUrl);
@@ -163,7 +155,7 @@ async function startWsServer() {
             //
             _response.method = ETH_SUBSCRIPTION;
             format.formatLog(_response.params.result);  // adapt log
-            ws.send(JSON.stringify(_response));
+            sendResponse(_response);
           });
 
           logWs.on('close', () => {
@@ -172,13 +164,13 @@ async function startWsServer() {
         }
 
       } catch (e) {
-        const response = buildJsonRpcRes({
+        sendResponse(buildJsonRpcRes({
+          id: 0,
           error: {
             code: -32600, 
             message: e.message
           }
-        });
-        sendResponse(response);
+        }));
       }
     }
 
@@ -192,9 +184,9 @@ async function startWsServer() {
     let {address, topics} = filter;
     if (address) {
       if (Array.isArray(address)) {
-        address = address.map(a => format.formatAddress(a, networkId));
+        address = address.map(a => format.formatAddress(a, engine.networkId));
       } else {
-        address = format.formatAddress(address, networkId);
+        address = format.formatAddress(address, engine.networkId);
       }
     }
     return {
