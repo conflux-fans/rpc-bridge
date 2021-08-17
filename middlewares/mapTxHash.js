@@ -7,7 +7,7 @@ module.exports = function() {
     const { method } = req;
     // update hash
     if (method === 'eth_getTransactionByHash' || method === 'eth_getTransactionReceipt') {
-      let _hash = req.params[0];
+      const _hash = req.params[0];
       if (_hashMap[_hash]) {
         req.params[0] = _hashMap[_hash];
       }
@@ -20,8 +20,10 @@ module.exports = function() {
     }
     await next();
     if (isSendRawTxMethod) {
+      console.log('Mapping hash: ', hash, res.result);
       _hashMap[hash] = res.result;
-      res.result = hash;
+      // if client check server's response hash with it's local computed hash, the next line code comment should be open
+      // res.result = hash;   
     }
   });
 }

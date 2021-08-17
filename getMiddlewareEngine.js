@@ -5,7 +5,7 @@ const cfxAddressIfy = require('./middlewares/cfxAddressIfy');
 const jsonrpcLogger = require('./middlewares/logger');
 const adaptGasPrice = require('./middlewares/adaptGasPrice');
 // const ETHProvider = require('./middlewares/ethProvider');
-// const mapTxHash = require('./middlewares/mapTxHash');
+const mapTxHash = require('./middlewares/mapTxHash');
 
 async function getMiddlewareEngine(url) {
   const networkId = await getNetworkId(url);
@@ -17,7 +17,7 @@ async function getMiddlewareEngine(url) {
   engine.push(adaptGasPrice());
   engine.push(jsonrpcLogger());
   engine.push(cfxAddressIfy());
-  // engine.push(mapTxHash());
+  engine.push(mapTxHash());
   engine.push(CFXProvider({url, networkId}));
   // engine.push(ETHProvider({url: 'http://localhost:7585'}))
   
