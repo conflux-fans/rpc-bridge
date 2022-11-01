@@ -13,7 +13,6 @@ module.exports = function() {
   return createAsyncMiddleware(async (req, res, next) => {
     await next();
     if (IGNORE_METHODS.indexOf(req.method) > -1) return;
-    // if (req.method != 'eth_sendRawTransaction') return;
     const data = {
       id: req.id,
       method: req.method,
@@ -21,7 +20,15 @@ module.exports = function() {
       result: res.result,
       error: res.error,
     };
-    console.log(JSON.stringify({method: data.method, params: data.params}, null, '\t'));
+    // log to file
     logger.info(data);
+    // log to console
+    const toLog = res.result || res.error;
+    let _result = Object.assign({}, typeof toLog === 'object' ? toLog : {result: toLog});
+    delete _result.logs;
+    console.log(JSON.stringify({
+      method: data.method, 
+      params: data.params
+    }, null, '\t'), _result);
   })
 }

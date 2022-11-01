@@ -1,6 +1,6 @@
 # cfx-to-eth-rpc-bridge
 
-This is a Conflux-to-ETH RPC bridge
+This is a Conflux-to-ETH RPC bridge, which can help adapt Conflux RPC into ETH RPC.
 
 ## How to run
 

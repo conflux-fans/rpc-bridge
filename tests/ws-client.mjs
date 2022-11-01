@@ -13,6 +13,11 @@ ws.on('open', function open() {
   //   params: ['newHeads']
   // };
 
+  jsonReq = {
+    method: 'eth_subscribe',
+    params: ['logs']
+  };
+
   ws.send(JSON.stringify(Object.assign({
     jsonrpc: '2.0',
     id: Date.now(),
@@ -22,8 +27,3 @@ ws.on('open', function open() {
 ws.on('message', function incoming(message) {
   console.log('received: %s', message);
 });
-
-
-setInterval(function() {
-
-}, 1000)

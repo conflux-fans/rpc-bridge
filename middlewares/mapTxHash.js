@@ -19,7 +19,7 @@ module.exports = function() {
       hash = ethers.utils.keccak256(req.params[0]);
     }
     await next();
-    if (isSendRawTxMethod) {
+    if (isSendRawTxMethod && res.result) {
       console.log('Mapping hash: ', hash, res.result);
       _hashMap[hash] = res.result;
       // if client check server's response hash with it's local computed hash, the next line code comment should be open

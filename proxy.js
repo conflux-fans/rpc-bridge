@@ -5,11 +5,23 @@ const bodyParser = require('koa-bodyparser');
 const util = require('util');
 const { providerFactory } = require('js-conflux-sdk');
 const debug = require('debug')('rpc-bridge');
+const { url: rpc_url } = require('./config.json');
 
 const provider = providerFactory({
-  url: "http://127.0.0.1:7545",
-  // url: "https://rinkeby.infura.io/v3/undefined",
+  url: rpc_url,
 });
+
+const INVALID_REQUEST = { 
+    "jsonrpc": "2.0", 
+    "error": {"message": "Invalid request"}, 
+    "id": 1 
+};
+
+const SERVER_ERROR = {
+    "jsonrpc": "2.0", 
+    "error": {"message": "Internal Server Error"}, 
+    "id": 1 
+};
 
 const app = new Koa();
 app.use(bodyParser());
@@ -18,30 +30,21 @@ app.use(bodyParser());
 app.use(async ctx => {
   const { body } = ctx.request;
   if (!body) {
-    ctx.body = { 
-      "jsonrpc": "2.0", 
-      "error": {"message": "Invalid request"}, 
-      "id": 1 
-    };
+    ctx.body = INVALID_REQUEST;
     return;
   }
-  const { method, params, id } = body;
-  let response = {
-    "jsonrpc": "2.0",
-    id
-  };
+  let response = {};
   try {
-    let result = await provider.call(method, ...params);
-    response.result = result;
-    await saveJsonRpc(method, params, result);
+    response = await util.request(body);
+    await saveJsonRpc(method, params, response);  // TODO: move logic to log middleware
   } catch (e) {
-    response.error = { "code": e.code, "message": e.message };
+    response = Object.assign({id: body.id}, SERVER_ERROR);
   }
-  debug({method, params, result: response.result, error: response.error});
+  debug({req: body, res: response});
   ctx.body = response;
 });
 
-async function saveJsonRpc(method, params, result) {
+async function saveJsonRpcOneTime(method, params, result) {
   const fileName = path.join(__dirname, `./json-rpc-shots/${method}.json`);
   try {
     await util.promisify(fs.stat)(fileName);
@@ -52,4 +55,13 @@ async function saveJsonRpc(method, params, result) {
   }
 }
 
-app.listen(3000);
+async function saveJsonRpc(method, params, result) {
+  const fileName = path.join(__dirname, `./json-rpc-shots/${method}-${Date.now()}.json`);
+  delete result.id;
+  delete result.jsonrpc;
+  let data = {method, params, response: result};
+  await util.promisify(fs.writeFile)(fileName, JSON.stringify(data, null, '\t'));
+}
+
+const PORT = 3000;
+app.listen(PORT, () => {console.log(`Proxy started at ${PORT}`)});

@@ -1,4 +1,5 @@
 const { Conflux } = require('js-conflux-sdk');
+const axios = require('axios').default;
 
 function ethAddressToCfx(address) {
   if(hasCFXAddressNamespace(address)) return address;
@@ -43,10 +44,16 @@ async function getNetworkId(url) {
   return networkId;
 }
 
+async function request(req) {
+    let response = await axios.post(URL, req)
+    return response.data;
+}
+
 module.exports = {
   ethAddressToCfx,
   ethContractAddressToCfx,
   waitNS,
   getNetworkId,
-  buildJsonRpcRes
+  buildJsonRpcRes,
+  request
 };
