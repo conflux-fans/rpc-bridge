@@ -28,5 +28,5 @@ To run this service, you need a node that running `conflux-rust`'s newest code.
 
 ### MetaMask ERC20 balanceChecker address adapt
 
-* Ethereum: 0xb1f8e55c7f64d203c1400b9d8555d050f94adf39
+* Ethereum: [0xb1f8e55c7f64d203c1400b9d8555d050f94adf39](https://etherscan.io/address/0xb1f8e55c7f64d203c1400b9d8555d050f94adf39#code)
 * Conflux: 0x8f35930629fce5b5cf4cd762e71006045bfeb24d
