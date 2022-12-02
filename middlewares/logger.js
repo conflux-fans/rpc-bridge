@@ -4,9 +4,10 @@ const logger = require('../logs/multiLogger')();
 
 const IGNORE_METHODS = [
   'eth_getBalance',
-  'eth_getBlockByNumber',
-  'eth_blockNumber',
-  'eth_call'
+//   'eth_getBlockByNumber',
+//   'eth_blockNumber',
+  'eth_call',
+  'eth_getBlockByHash',
 ];
 
 module.exports = function() {
