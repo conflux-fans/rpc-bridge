@@ -14,7 +14,7 @@ async function getMiddlewareEngine(url) {
   let engine = new JsonRpcEngine();
   engine.push(restoreError());
   engine.push(jsonrpcLogger());
-//   engine.push(adaptBlockNumber());  // will change blockNumber tag 'latest' to 'safe'
+  engine.push(adaptBlockNumber());  // will change blockNumber tag 'latest' to 'safe'
   engine.push(CFXProvider({url, networkId}));
   
   engine.networkId = networkId; // save to use in other place
